@@ -8,7 +8,7 @@ resource = APIRouter(prefix="/books",tags=["books"],)
 
 
 @resource.get("/")
-async def findAll(response:Response,page:Optional[int],size: Optional[int],sort: Optional[str] ='ASC',orderby: Optional[str] ='id'): 
+async def findAll(response:Response,page:Optional[int]=1,size: Optional[int]=2,sort: Optional[str] ='ASC',orderby: Optional[str] ='id'): 
     
     objBook = bookService.findAll(page,size,sort,orderby)
     
