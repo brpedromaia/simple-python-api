@@ -3,15 +3,15 @@
 
 ## Building Locally
 ```
-docker build -t python-api -f ContainerFile .
+docker build -t brpedromaia/simple-python-api:v4 -f ContainerFile .
 ```
 
 ## Running Locally
 ```
-docker run --rm -it --name python-api  \
+docker run --rm -it --name books-api  \
   -e="APP_ENV=local" \
   -p 8888:8000 \
-  python-api:latest
+  brpedromaia/simple-python-api:v4
 ```
 
 for elatic apm agent add the env vars below
@@ -23,11 +23,11 @@ for elatic apm agent add the env vars below
 
 ## Running Development Environemnt
 ```
-docker run --rm -it --name python-api  \
+docker run --rm -it --namebooks-api  \
   -e="APP_ENV=local" \
   -p 8888:8000 \
   -v $PWD/:/app/ \
-  python-api:latest --host=0.0.0.0 --port=8000 --reload
+  brpedromaia/simple-python-api:v4 --host=0.0.0.0 --port=8000 --reload
 ```
 
 # Accessing

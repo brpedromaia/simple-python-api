@@ -22,20 +22,29 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "chart.serviceAccountName" . }}
-      securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      serviceAccountName: default
+      initContainers:
+        - name: ngnixconfig
+          image: alpine:3.17.1
+          imagePullPolicy: Always
+          command: ["/bin/sh"]
+          args: 
+            - -c
+            - >-
+              apk update && apk add curl;
+              echo "{\"data\": {\"{{ include "chart.fullname" . }}\": \"$(cat /tmp/service.conf |sed 's/$/\\n/g')\"}}" > /tmp/patch.json;
+              curl -skX PATCH https://kubernetes.default.svc/api/v1/namespaces/{{ .Release.Namespace }}/configmaps/openresty -H "Authorization: Bearer $( cat /var/run/secrets/kubernetes.io/serviceaccount/token )" -H "Content-Type: application/merge-patch+json; charset=utf-8" -d "@/tmp/patch.json"
+          volumeMounts:
+            - name: config
+              mountPath: /tmp/service.conf
+              readOnly: true
+              subPath: service.conf
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          env:
-            - name: PLAYGROUND_PUBLIC_DOMAIN
-              value: "{{ .Values.app.host }}"
-            - name: PLAYGROUND_PUBLIC_DOMAIN_LOCAL_SSL_GENERATION
-              value: "{{ .Values.app.generate_ssl_certs }}"
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
@@ -44,26 +53,12 @@ spec:
             httpGet:
               path: /
               port: http
-              scheme: "{{ .Values.app.scheme | upper  }}"
-              httpHeaders:
-                - name: Host
-                  value: "{{ .Values.app.host }}"
           readinessProbe:
             httpGet:
               path: /
               port: http
-              scheme: "{{ .Values.app.scheme | upper }}"
-              httpHeaders:
-                - name: Host
-                  value: "{{ .Values.app.host }}"
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-      
-          volumeMounts:
-            - name: config
-              mountPath: /usr/local/openresty/nginx/services
-              readOnly: true
-              # subPath: namespace-services.conf
       volumes:
         - name: config
           configMap:
